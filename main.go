@@ -5,10 +5,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 )
 
+const ignoreFileName = ".filecountignore"
+
 var extension = map[string][]string{
-	"YAML": []string{".yaml", ".yml"},
+	"YAML": {".yaml", ".yml"},
 }
 
 var types = map[string]string{
@@ -47,14 +51,33 @@ func main() {
 	if len(os.Args) >= 2 {
 		root = os.Args[1]
 	}
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+
+	ignoreFileContent, err := os.ReadFile(ignoreFileName)
+	var ignoreList []string
+	if err == nil {
+		ignoreLines := string(ignoreFileContent)
+		for line := range strings.SplitSeq(ignoreLines, "\n") {
+			if line == "" {
+				continue
+			}
+			ignoreList = append(ignoreList, line)
+		}
+	}
+
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
+
+		fileName := filepath.Base(path)
 		ext := filepath.Ext(path)
+
+		if slices.Contains(ignoreList, fileName) {
+			return nil
+		}
 
 		for fileExt, fileType := range types {
 			if extension[fileType] == nil {
