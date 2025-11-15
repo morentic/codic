@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 )
 
 const ignoreFileName = ".filecountignore"
@@ -102,8 +105,12 @@ func main() {
 		fmt.Println("Error:", err)
 		return
 	}
+	table := table.New()
 	for ext, count := range fileCount {
-		fmt.Printf("%s files: %d\n", types[ext], count)
+		table.Row(types[ext], fmt.Sprintf("%d", count))
 	}
-	fmt.Printf("Total files: %d\n", totalFiles)
+	style := lipgloss.NewStyle().Bold(true)
+	table.Row(style.Render("Total"), style.Render(fmt.Sprintf("%d", totalFiles)))
+	table.BorderRow(true)
+	fmt.Println(table.Render())
 }
